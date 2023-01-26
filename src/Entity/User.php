@@ -22,6 +22,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $email = null;
 
     #[ORM\Column]
+    #[Ignore]
     private array $roles = [];
 
     #[ORM\OneToMany(mappedBy: 'userID', targetEntity: Tweet::class, orphanRemoval: true)]
@@ -32,6 +33,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      * @var string The hashed password
      */
     #[ORM\Column]
+    #[Ignore]
     private ?string $password = null;
 
     public function __construct()
