@@ -6,6 +6,8 @@ use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
@@ -21,11 +23,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private array $roles = [];
 
+    #[ORM\OneToMany(mappedBy: 'userID', targetEntity: Tweet::class, orphanRemoval: true)]
+    private Collection $tweet;
+
     /**
      * @var string The hashed password
      */
     #[ORM\Column]
     private ?string $password = null;
+
+    public function __construct()
+    {
+        $this->tweet = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -69,6 +79,34 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setRoles(array $roles): self
     { 
         $this->roles = $roles;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Tweet>
+     */
+    public function getTweet(): Collection
+    {
+        return $this->tweet;
+    }
+
+    public function addTweet(Tweet $tweet): self
+    {
+        if (!$this->tweet->contains($tweet)) {
+            $this->tweet->add($tweet);
+            $tweet->setUserID($this);
+        }
+        return $this;
+    }
+    public function removeTweet(Tweet $tweet): self
+    {
+        if ($this->tweet->removeElement($tweet)) {
+            // set the owning side to null (unless already changed)
+            if ($tweet->getUserID() === $this) {
+                $tweet->setUserID(null);
+            }
+        }
 
         return $this;
     }
