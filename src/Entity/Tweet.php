@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\TweetRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: TweetRepository::class)]
 class Tweet
@@ -12,16 +13,20 @@ class Tweet
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['groupTweet'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['groupTweet'])]
     private ?string $texte = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[Groups(['groupTweet'])]
     private ?\DateTimeInterface $date = null;
 
     #[ORM\ManyToOne(inversedBy: 'tweet')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['groupTweet'])]
     private ?User $userID = null;
 
     public function getId(): ?int

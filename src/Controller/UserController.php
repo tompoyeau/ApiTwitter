@@ -18,7 +18,7 @@ class UserController extends AbstractController
     /**
      * Liste les users de la base de données.
      *
-     * Récupère et renvoie sous format json le l'id et email de chaque user présent dans la bdd.
+     * Récupère et renvoie sous format json l'id et email de chaque user présent dans la bdd.
      *
      * @Route("/api/users", methods={"GET"})
      * @OA\Response(
@@ -29,7 +29,7 @@ class UserController extends AbstractController
      *        @OA\Items(ref=@Model(type=User::class, groups={"full"}))
      *     )
      * )
-     * @OA\Tag(name="users")
+     * @OA\Tag(name="Users")
      */
     public function AllUsers(UserRepository $repository): JsonResponse
     {
@@ -43,7 +43,7 @@ class UserController extends AbstractController
     /**
      * Renvoie un user via son id.
      *
-     * Récupère et renvoie sous format json le l'id et email d'un user dont l'id est passé en paramètre GET.
+     * Récupère et renvoie sous format json l'id et email d'un user dont l'id est passé en paramètre GET.
      *
      * @Route("/api/user/{id}", methods={"GET"})
      * @OA\Response(
@@ -54,7 +54,7 @@ class UserController extends AbstractController
      *        @OA\Items(ref=@Model(type=User::class, groups={"full"}))
      *     )
      * )
-     * @OA\Tag(name="users")
+     * @OA\Tag(name="Users")
      */
     public function show(EntityManagerInterface $entityManager, int $id, SerializerInterface $serializer): JsonResponse
     {
@@ -71,5 +71,34 @@ class UserController extends AbstractController
             "groups" => ["group1"]
 
         ]);
+    }
+
+     /**
+     * Suppression d'un user via son id.
+     *
+     * Récupère et renvoie sous format json l'id et email d'un user dont l'id est passé en paramètre GET.
+     *
+     * @Route("/api/user/{id}", methods={"DELETE"})
+     * @OA\Response(
+     *     response=200,
+     *     description="User found",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=User::class, groups={"full"}))
+     *     )
+     * )
+     * @OA\Tag(name="Users")
+     */
+    public function delete(EntityManagerInterface $entityManager, int $id): JsonResponse
+    {
+        $user = $entityManager->getRepository(User::class)->find($id);
+        if (!$user) {
+            throw $this->createNotFoundException(
+                'No user found for id ' . $id
+            );
+        }
+        $entityManager->remove($user);
+        $entityManager->flush();
+        return $this->json(null, 204);
     }
 }
