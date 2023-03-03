@@ -4,18 +4,72 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Repository\UserRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Nelmio\ApiDocBundle\Annotation\Model;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use OpenApi\Annotations as OA;
 
 class UserController extends AbstractController
 {
-    #[Route('/api/user', name: 'app_user', methods: 'GET')]
-    public function index(UserRepository $UserRepo, SerializerInterface $serializer) : Response
+
+    /**
+     * Liste les users de la base de données.
+     *
+     * Récupère et renvoie sous format json le l'id et email de chaque user présent dans la bdd.
+     *
+     * @Route("/api/users", methods={"GET"})
+     * @OA\Response(
+     *     response=200,
+     *     description="Users found",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=User::class, groups={"full"}))
+     *     )
+     * )
+     * @OA\Tag(name="users")
+     */
+    public function AllUsers(UserRepository $repository): JsonResponse
     {
-        $userList = $UserRepo->findAll();
-        $jsonContent = $serializer->serialize($userList, 'json');
-        return new Response($jsonContent);
+        $users = $repository->findAll();
+        return $this->json($users, 200, [], [
+            "groups" => ["group1"]
+
+        ]);
+    }
+
+    /**
+     * Renvoie un user via son id.
+     *
+     * Récupère et renvoie sous format json le l'id et email d'un user dont l'id est passé en paramètre GET.
+     *
+     * @Route("/api/user/{id}", methods={"GET"})
+     * @OA\Response(
+     *     response=200,
+     *     description="User found",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=User::class, groups={"full"}))
+     *     )
+     * )
+     * @OA\Tag(name="users")
+     */
+    public function show(EntityManagerInterface $entityManager, int $id, SerializerInterface $serializer): JsonResponse
+    {
+        $user = $entityManager->getRepository(User::class)->find($id);
+        if (!$user) {
+            throw $this->createNotFoundException(
+                'No user found for id ' . $id
+            );
+        }
+        $jsonContent = $serializer->serialize($user, 'json', [
+            'groups' => ['group1'],
+        ]);
+        return $this->json($user, 200, [], [
+            "groups" => ["group1"]
+
+        ]);
     }
 }
