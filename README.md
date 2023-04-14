@@ -7,7 +7,7 @@ Assurez-vous d'avoir installé composer sur votre machine.
 
 ## Commandes
 
-- Le projet est fourni sans le vendor. Afin d'avoir les dépendances, vous devez exécutez la commandes suivante :
+- Le projet est fourni sans le vendor. Afin d'avoir les dépendances, vous devez exécutez la commande suivante :
 ```
 composer install
 ```
@@ -35,24 +35,24 @@ Sans cela le front ne communiquera pas avec l'api.
 
 ## User
 
-GET
+**GET**
 - /users
 - /user/{id}
 
-POST
+**POST**
 - /user/create
 
-DELETE
+**DELETE**
 - /user/{id}
 
 ## Tweet
 
-GET
+**GET**
 - /tweets
 - /tweet/{id}
 
-POST
+**POST**
 - /tweet/create
 
-DELETE
+**DELETE**
 - /tweet/{id}
