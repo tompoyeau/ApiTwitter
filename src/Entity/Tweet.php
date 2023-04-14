@@ -13,15 +13,15 @@ class Tweet
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['groupTweet'])]
+    #[Groups(['groupTweet', 'groupUser'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['groupTweet'])]
+    #[Groups(['groupTweet', 'groupUser'])]
     private ?string $texte = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
-    #[Groups(['groupTweet'])]
+    #[Groups(['groupTweet', 'groupUser'])]
     private ?\DateTimeInterface $date = null;
 
     #[ORM\ManyToOne(inversedBy: 'tweet')]

@@ -35,7 +35,7 @@ class UserController extends AbstractController
     {
         $users = $repository->findAll();
         return $this->json($users, 200, [], [
-            "groups" => ["group1"]
+            "groups" => ["groupUser"]
 
         ]);
     }
@@ -65,10 +65,10 @@ class UserController extends AbstractController
             );
         }
         $jsonContent = $serializer->serialize($user, 'json', [
-            'groups' => ['group1'],
+            'groups' => ['groupUser'],
         ]);
         return $this->json($user, 200, [], [
-            "groups" => ["group1"]
+            "groups" => ["groupUser"]
 
         ]);
     }

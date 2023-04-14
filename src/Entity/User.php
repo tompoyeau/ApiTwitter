@@ -17,19 +17,22 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['group1'])]
+    #[Groups(['group1', 'groupUser'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
-    #[Groups(['group1'])]
+    #[Groups(['group1', 'groupUser'])]
     private ?string $email = null;
 
+    #[ORM\Column(length: 20)]
+    #[Groups(['group1', 'groupUser'])]
+    private ?string $username = null;
+
     #[ORM\Column]
-    #[Ignore]
     private array $roles = [];
 
     #[ORM\OneToMany(mappedBy: 'userID', targetEntity: Tweet::class, orphanRemoval: true)]
-    #[Ignore]
+    #[Groups(['groupUser'])]
     private Collection $tweet;
 
     /**
@@ -37,6 +40,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     #[ORM\Column]
     private ?string $password = null;
+
 
     public function __construct()
     {
@@ -139,5 +143,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         // If you store any temporary, sensitive data on the user, clear it here
         // $this->plainPassword = null;
+    }
+
+    public function getUsername(): ?string
+    {
+        return $this->username;
+    }
+
+    public function setUsername(string $username): self
+    {
+        $this->username = $username;
+
+        return $this;
     }
 }

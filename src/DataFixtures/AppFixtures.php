@@ -33,6 +33,7 @@ class AppFixtures extends Fixture
             $user->setEmail($faker->email());
             $password = $this->hasher->hashPassword($user, $faker->password());
             $user->setPassword($password);
+            $user->setUsername($faker->userName());
             $user->addTweet($tweet);
 
             $manager->persist($user);

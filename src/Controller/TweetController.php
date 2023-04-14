@@ -35,8 +35,7 @@ class TweetController extends AbstractController
     {
         $tweets = $repository->findAll();
         return $this->json($tweets, 200, [], [
-            "groups" => ["groupTweet"]
-
+            "groups" => ["groupTweet", "group1"]
         ]);
     }
 
@@ -68,7 +67,7 @@ class TweetController extends AbstractController
             'groups' => ['groupTweet'],
         ]);
         return $this->json($tweet, 200, [], [
-            "groups" => ["groupTweet"]
+            "groups" => ["groupTweet", "group1"]
 
         ]);
     }
@@ -76,7 +75,7 @@ class TweetController extends AbstractController
     /**
      * Supprime un tweet via son id.
      *
-     * Récupère et renvoie sous format json l'id, le texte, la date et l'id user dont l'id du tweet est passé en paramètre GET.
+     * Supprime un tweet via l'id passé en paramètre.
      *
      * @Route("/api/tweet/{id}", methods={"DELETE"})
      * @OA\Response(
@@ -94,11 +93,32 @@ class TweetController extends AbstractController
         $tweet = $entityManager->getRepository(Tweet::class)->find($id);
         if (!$tweet) {
             throw $this->createNotFoundException(
-                'No user found for id ' . $id
+                'No tweet found for id ' . $id
             );
         }
         $entityManager->remove($tweet);
         $entityManager->flush();
+        return $this->json(null, 204);
+    }
+
+    /**
+     * Créer un tweet.
+     *
+     * Créer un tweet à partir des informations envoyer en POST.
+     *
+     * @Route("/api/tweet/create", methods={"POST"})
+     * @OA\Response(
+     *     response=200,
+     *     description="Tweet created",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Tweet::class, groups={"full"}))
+     *     )
+     * )
+     * @OA\Tag(name="Tweets")
+     */
+    public function create(EntityManagerInterface $entityManager, int $id): JsonResponse
+    {
         return $this->json(null, 204);
     }
 }
