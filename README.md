@@ -33,6 +33,10 @@ Sans cela le front ne communiquera pas avec l'api.
 
 # Liste des routes
 
+## Nelmio Doc
+
+- /
+
 ## User
 
 **GET**
