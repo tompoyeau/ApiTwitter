@@ -11,6 +11,8 @@ use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
 use OpenApi\Annotations as OA;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class UserController extends AbstractController
 {
@@ -73,7 +75,7 @@ class UserController extends AbstractController
         ]);
     }
 
-     /**
+    /**
      * Suppression d'un user via son id.
      *
      * Récupère et renvoie sous format json l'id et email d'un user dont l'id est passé en paramètre GET.
@@ -100,5 +102,53 @@ class UserController extends AbstractController
         $entityManager->remove($user);
         $entityManager->flush();
         return $this->json(null, 204);
+    }
+
+    /**
+     * Création d'un nouveau user
+     *
+     * Créer un nouveau user à partir des paramètres envoyés en POST.
+     *
+     * @Route("/api/user/create", methods={"POST"})
+     * @OA\Response(
+     *     response=201,
+     *     description="User created",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=User::class, groups={"full"}))
+     *     )
+     * )
+     * @OA\Tag(name="Users")
+     */
+    public function createUser(Request $request, EntityManagerInterface $entityManager, ValidatorInterface $validator): JsonResponse
+    {
+        // On récupère les données envoyées dans la requête
+        $data = json_decode($request->getContent(), true);
+
+        $errors = $validator->validate($data);
+
+        if (count($errors) > 0) {
+            $errorMessages = [];
+            foreach ($errors as $error) {
+                $errorMessages[$error->getPropertyPath()] = $error->getMessage();
+            }
+            return $this->json($errorMessages, 400);
+        }
+
+        $user = new User();
+        $user->setEmail($data['email']);
+        $user->setUsername($data['username']);
+        $user->setRoles(['utilisateur']);
+        $user->setPassword($data['password']);
+
+        try {
+            $entityManager->persist($user);
+            $entityManager->flush();
+        } catch (\Exception $e) {
+            return $this->json(['error' => 'Une erreur est survenue lors de la création de l\'utilisateur.'], 500);
+        }
+        return $this->json($user, 201, [], [
+            'groups' => ['groupUser']
+        ]);
     }
 }
