@@ -3,61 +3,63 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\DTO\UserDTO;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\HttpFoundation\JsonResponse;
+use Exception;
 use Nelmio\ApiDocBundle\Annotation\Model;
-use Symfony\Component\Serializer\SerializerInterface;
+use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
-use OpenApi\Annotations as OA;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class UserController extends AbstractController
 {
 
-    /**
-     * Liste les users de la base de données.
-     *
-     * Récupère et renvoie sous format json l'id et email de chaque user présent dans la bdd.
-     *
-     * @Route("/api/users", methods={"GET"})
-     * @OA\Response(
-     *     response=200,
-     *     description="Users found",
-     *     @OA\JsonContent(
-     *        type="array",
-     *        @OA\Items(ref=@Model(type=User::class, groups={"full"}))
-     *     )
-     * )
-     * @OA\Tag(name="Users")
-     */
+    #[Route('/api/users', name: 'users_list', methods: 'GET')]
+    #[OA\Get(
+        summary: 'Retourne la liste des utilisateurs',
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Liste des utilisateurs',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(ref: new Model(type: User::class, groups: ['groups' => 'groupUser']))
+                )
+            )
+        ]
+    )]
+    #[OA\Tag(name: "Users")]
     public function AllUsers(UserRepository $repository): JsonResponse
     {
         $users = $repository->findAll();
-        return $this->json($users, 200, [], [
+        return $this->json(data:$users, context:[
             "groups" => ["groupUser"]
 
         ]);
     }
 
-    /**
-     * Renvoie un user via son id.
-     *
-     * Récupère et renvoie sous format json l'id et email d'un user dont l'id est passé en paramètre GET.
-     *
-     * @Route("/api/user/{id}", methods={"GET"})
-     * @OA\Response(
-     *     response=200,
-     *     description="User found",
-     *     @OA\JsonContent(
-     *        type="array",
-     *        @OA\Items(ref=@Model(type=User::class, groups={"full"}))
-     *     )
-     * )
-     * @OA\Tag(name="Users")
-     */
+    #[Route('/api/user/{id}', name: 'find_user', methods: 'GET')]
+    #[OA\Get(
+        summary: 'Retourne un utilisateur',
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'L\'utilisateur',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(ref: new Model(type: User::class, groups: ['groups' => 'groupUser']))
+                )
+            )
+        ]
+    )]
+    #[OA\Tag(name: "Users")]
     public function show(EntityManagerInterface $entityManager, int $id, SerializerInterface $serializer): JsonResponse
     {
         $user = $entityManager->getRepository(User::class)->find($id);
@@ -75,22 +77,17 @@ class UserController extends AbstractController
         ]);
     }
 
-    /**
-     * Suppression d'un user via son id.
-     *
-     * Récupère et renvoie sous format json l'id et email d'un user dont l'id est passé en paramètre GET.
-     *
-     * @Route("/api/user/{id}", methods={"DELETE"})
-     * @OA\Response(
-     *     response=200,
-     *     description="User found",
-     *     @OA\JsonContent(
-     *        type="array",
-     *        @OA\Items(ref=@Model(type=User::class, groups={"full"}))
-     *     )
-     * )
-     * @OA\Tag(name="Users")
-     */
+    #[Route('/api/user/{id}', name: 'user_delete', methods: 'DELETE')]
+    #[OA\Delete(
+        summary: 'Suppression d\'un utilisateur',
+        responses: [
+            new OA\Response(
+                response: 204,
+                description: 'Utilisateur supprimé',
+            )
+        ]
+    )]
+    #[OA\Tag(name: "Users")]
     public function delete(EntityManagerInterface $entityManager, int $id): JsonResponse
     {
         $user = $entityManager->getRepository(User::class)->find($id);
@@ -104,51 +101,94 @@ class UserController extends AbstractController
         return $this->json(null, 204);
     }
 
-    /**
-     * Création d'un nouveau user
-     *
-     * Créer un nouveau user à partir des paramètres envoyés en POST.
-     *
-     * @Route("/api/user/create", methods={"POST"})
-     * @OA\Response(
-     *     response=201,
-     *     description="User created",
-     *     @OA\JsonContent(
-     *        type="array",
-     *        @OA\Items(ref=@Model(type=User::class, groups={"full"}))
-     *     )
-     * )
-     * @OA\Tag(name="Users")
-     */
-    public function createUser(Request $request, EntityManagerInterface $entityManager, ValidatorInterface $validator): JsonResponse
+    #[Route("/api/user/{id}", name: "user_update", methods: "PUT")]
+    #[OA\Put(
+        summary: 'Mise à jour des données user',
+        requestBody: new OA\RequestBody(
+            required: true,
+            description: 'Informations d\'un utilisateur',
+            content: new OA\JsonContent(
+                ref: new Model(type: UserDto::class)
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Identifiant de l\'utilisateur'
+            ),
+        ]
+    )]
+    #[OA\Tag(name: 'Users')]
+    public function updateUserById(Request $request, EntityManagerInterface $entityManager, ValidatorInterface $validator, UserPasswordHasherInterface $hasher, SerializerInterface $serializer, int $id): JsonResponse
     {
-        // On récupère les données envoyées dans la requête
-        $data = json_decode($request->getContent(), true);
+        $user = $entityManager->getRepository(User::class)->find($id);
 
-        $errors = $validator->validate($data);
+        if ($user == null) {
+            return $this->json('L\'utilisateur n\'existe pas');
+        }
+
+        try {
+            $userDto = $serializer->deserialize($request->getContent(), UserDto::class, 'json');
+        } catch (Exception $e) {
+            return $this->json($e->getMessage());
+        }
+
+        $errors = $validator->validate($userDto);
 
         if (count($errors) > 0) {
-            $errorMessages = [];
-            foreach ($errors as $error) {
-                $errorMessages[$error->getPropertyPath()] = $error->getMessage();
-            }
-            return $this->json($errorMessages, 400);
+            return $this->json((string) $errors);
+        }
+
+        $user->setEmail($userDto->email)
+            ->setUsername($userDto->username)
+            ->setPassword($hasher->hashPassword($user, $userDto->password));
+
+        $entityManager->persist($user);
+        $entityManager->flush();
+
+        return $this->json("Modification réussi");
+    }
+
+    #[Route('/api/user/create', name: 'create_user', methods: 'POST')]
+    #[OA\Post(
+        summary: 'Création d\'un utilisateur',
+        requestBody: new OA\RequestBody(
+            required: true,
+            description: 'Informations d\'un utilisateur',
+            content: new OA\JsonContent(
+                ref: new Model(type: UserDto::class)
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Identifiant de l\'utilisateur'
+            ),
+        ]
+    )]
+    #[OA\Tag(name: "Users")]
+    public function create(Request $request, EntityManagerInterface $entityManager, ValidatorInterface $validator, UserPasswordHasherInterface $hasher, SerializerInterface $serializer): JsonResponse
+    {
+        try {
+            $userDto = $serializer->deserialize($request->getContent(), UserDto::class, 'json');
+        } catch (Exception $e) {
+            return $this->json($e->getMessage(), 400);
+        }
+
+        $errors = $validator->validate($userDto);
+
+        if (count($errors) > 0) {
+            return $this->json((string) $errors, 400);
         }
 
         $user = new User();
-        $user->setEmail($data['email']);
-        $user->setUsername($data['username']);
-        $user->setRoles(['utilisateur']);
-        $user->setPassword($data['password']);
+        $user->setEmail($userDto->email)
+            ->setUsername($userDto->username)
+            ->setPassword($hasher->hashPassword($user, $userDto->password));
 
-        try {
-            $entityManager->persist($user);
-            $entityManager->flush();
-        } catch (\Exception $e) {
-            return $this->json(['error' => 'Une erreur est survenue lors de la création de l\'utilisateur.'], 500);
-        }
-        return $this->json($user, 201, [], [
-            'groups' => ['groupUser']
-        ]);
+        $entityManager->persist($user);
+        $entityManager->flush();
+
+        return $this->json("Identifiant de l'utilisateur : {$user->getId()}");
     }
 }

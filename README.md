@@ -3,7 +3,6 @@
 ## Prérequis
 
 Avoir une base de données Mysql installé sur votre machine.
-Assurez-vous d'avoir installé composer sur votre machine.
 
 ## Commandes
 
